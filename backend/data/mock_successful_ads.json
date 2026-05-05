@@ -1,0 +1,62 @@
+[
+  {
+    "brand": "MarketSignal Pro",
+    "hook": "Most traders see the move after it already happened.",
+    "ad_text": "Get daily signals and expert-backed research before the market narrative gets crowded. Stop guessing and start trading from a clear plan.",
+    "cta": "Start with today's signal",
+    "started_at": "2026-05-01",
+    "spend": 720,
+    "engagement": 9450,
+    "impressions": 185000,
+    "platform": "Meta Ads",
+    "url": "https://example.com/ad/market-signal-pro"
+  },
+  {
+    "brand": "TradeClarity",
+    "hook": "Too many charts. Too many opinions. Not enough clarity.",
+    "ad_text": "TradeClarity turns noisy market data into simple daily trade ideas so you can act with confidence instead of overwhelm.",
+    "cta": "See the daily brief",
+    "started_at": "2026-04-28",
+    "spend": 640,
+    "engagement": 8100,
+    "impressions": 160000,
+    "platform": "Meta Ads",
+    "url": "https://example.com/ad/tradeclarity"
+  },
+  {
+    "brand": "SignalRoom",
+    "hook": "Missing entries because alerts arrive too late?",
+    "ad_text": "SignalRoom combines community wisdom, risk notes, and timely alerts so traders can prepare before the next setup moves.",
+    "cta": "Join the alert room",
+    "started_at": "2026-04-22",
+    "spend": 520,
+    "engagement": 6100,
+    "impressions": 120000,
+    "platform": "Meta Ads",
+    "url": "https://example.com/ad/signalroom"
+  },
+  {
+    "brand": "ChartMentor",
+    "hook": "Stop staring at charts alone.",
+    "ad_text": "Get expert trade breakdowns, risk levels, and a simple plan for the day. Designed for traders who need guidance without the noise.",
+    "cta": "Get the plan",
+    "started_at": "2026-04-16",
+    "spend": 410,
+    "engagement": 4200,
+    "impressions": 99000,
+    "platform": "Meta Ads",
+    "url": "https://example.com/ad/chartmentor"
+  },
+  {
+    "brand": "Old Bull Alerts",
+    "hook": "One signal can change the week.",
+    "ad_text": "Daily trading alerts, market context, and easy explanations for active traders.",
+    "cta": "Try alerts",
+    "started_at": "2026-03-15",
+    "spend": 300,
+    "engagement": 1000,
+    "impressions": 88000,
+    "platform": "Meta Ads",
+    "url": "https://example.com/ad/old-bull-alerts"
+  }
+]
