@@ -50,6 +50,24 @@ input {
   font: inherit;
 }
 
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.checkbox {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-weight: 400;
+}
+
+.checkbox input {
+  width: auto;
+  margin: 0;
+}
+
 button {
   display: block;
   width: 170px;
@@ -73,6 +91,36 @@ button:disabled {
   margin: 16px 0 0;
   color: #b91c1c;
   text-align: center;
+}
+
+.warning {
+  padding: 10px 12px;
+  border-radius: 6px;
+  color: #92400e;
+  background: #fffbeb;
+}
+
+.status {
+  margin: -8px 0 18px;
+  text-align: center;
+  color: #64748b;
+}
+
+.status.good {
+  color: #047857;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.meta span {
+  padding: 6px 9px;
+  border-radius: 6px;
+  background: #e0f2fe;
+  font-size: 14px;
 }
 
 ul {
@@ -116,6 +164,12 @@ pre {
   margin: 8px 0 0;
 }
 
+.ad a {
+  display: inline-block;
+  margin-top: 8px;
+  color: #2563eb;
+}
+
 .muted {
   margin-top: 0;
   color: #64748b;
@@ -132,5 +186,9 @@ pre {
 
   button {
     width: 100%;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
   }
 }

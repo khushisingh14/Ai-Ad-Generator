@@ -1,9 +1,8 @@
 import json
-import os
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from urllib import request
-from urllib.error import URLError
+
+from .apify_fetch import ApifyMetaAdsClient
 
 
 class SuccessfulAdSearchAgent:
@@ -13,65 +12,81 @@ class SuccessfulAdSearchAgent:
         self.data_dir = data_dir
         self.mock_file = data_dir / "mock_successful_ads.json"
         self.output_file = data_dir / "working_ads.json"
+        self.raw_output_file = data_dir / "apify_raw_ads.json"
+        self.apify = ApifyMetaAdsClient()
 
-    def run(self, product_url: str, niche: str, days: int = 30, limit: int = 5) -> dict:
-        ads = self._load_from_apify(product_url, niche) or self._load_mock_ads()
+    def run(
+        self,
+        product_url: str,
+        niche: str,
+        days: int = 30,
+        limit: int = 5,
+        force_mock: bool = False,
+    ) -> dict:
+        raw_ads = [] if force_mock else self.apify.search_ads(product_url, niche, days, limit)
+        source = "apify" if raw_ads else "mock"
+        ads = self._normalize_ads(raw_ads) if raw_ads else self._load_mock_ads()
         selected_ads = self._select_best_recent_ads(ads, days=days, limit=limit)
         self._save_json(selected_ads)
+        if raw_ads:
+            self._save_raw_json(raw_ads)
 
         return {
-            "source": "apify" if os.getenv("APIFY_TOKEN") else "mock",
+            "source": source,
+            "apify": self.apify.status(),
+            "used_mock_fallback": source == "mock",
             "selected_ads": selected_ads,
             "saved_to": str(self.output_file),
+            "raw_saved_to": str(self.raw_output_file) if raw_ads else "",
         }
 
-    def _load_from_apify(self, product_url: str, niche: str) -> list[dict]:
-        token = os.getenv("APIFY_TOKEN")
-        actor_id = os.getenv("APIFY_META_ADS_ACTOR_ID")
-        if not token or not actor_id:
-            return []
-
-        url = f"https://api.apify.com/v2/acts/{actor_id}/run-sync-get-dataset-items?token={token}"
-        payload = json.dumps(
-            {
-                "query": product_url,
-                "niche": niche,
-                "platform": "facebook",
-                "activeWithinDays": 30,
-            }
-        ).encode("utf-8")
-
-        req = request.Request(
-            url,
-            data=payload,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-
-        try:
-            with request.urlopen(req, timeout=45) as response:
-                raw_items = json.loads(response.read().decode("utf-8"))
-        except (OSError, URLError, json.JSONDecodeError):
-            return []
-
-        return [self._normalize_apify_item(item) for item in raw_items if isinstance(item, dict)]
+    def _normalize_ads(self, items: list[dict]) -> list[dict]:
+        return [self._normalize_apify_item(item) for item in items if isinstance(item, dict)]
 
     def _normalize_apify_item(self, item: dict) -> dict:
-        text = item.get("adText") or item.get("text") or item.get("body") or ""
-        started_at = item.get("startDate") or item.get("startedAt") or item.get("createdAt") or ""
-        metrics = item.get("metrics") or {}
+        snapshot = item.get("snapshot") or {}
+        page = item.get("page") or {}
+        creative = item.get("creative") or {}
+        metrics = item.get("metrics") or item.get("performance") or {}
+        snapshot_body = snapshot.get("body")
+        snapshot_body_text = snapshot_body.get("text") if isinstance(snapshot_body, dict) else snapshot_body
+
+        text = (
+            item.get("adText")
+            or item.get("text")
+            or item.get("body")
+            or item.get("ad_creative_body")
+            or snapshot_body_text
+            or snapshot.get("caption")
+            or ""
+        )
+        started_at = (
+            item.get("startDate")
+            or item.get("startedAt")
+            or item.get("createdAt")
+            or item.get("ad_delivery_start_time")
+            or item.get("start_date")
+            or ""
+        )
 
         return {
-            "brand": item.get("pageName") or item.get("brand") or "Unknown advertiser",
+            "brand": (
+                item.get("pageName")
+                or item.get("page_name")
+                or item.get("brand")
+                or page.get("name")
+                or "Unknown advertiser"
+            ),
             "ad_text": text,
-            "hook": item.get("headline") or text[:90],
-            "cta": item.get("cta") or item.get("callToAction") or "Learn More",
+            "hook": item.get("headline") or creative.get("title") or snapshot.get("title") or text[:90],
+            "cta": item.get("cta") or item.get("callToAction") or item.get("cta_text") or "Learn More",
             "started_at": started_at[:10],
-            "spend": self._safe_number(metrics.get("spend") or item.get("spend"), default=0),
-            "engagement": self._safe_number(metrics.get("engagement") or item.get("engagement"), default=0),
-            "impressions": self._safe_number(metrics.get("impressions") or item.get("impressions"), default=0),
+            "spend": self._metric_value(metrics.get("spend") or item.get("spend")),
+            "engagement": self._metric_value(metrics.get("engagement") or item.get("engagement")),
+            "impressions": self._metric_value(metrics.get("impressions") or item.get("impressions")),
             "platform": "Meta Ads",
-            "url": item.get("url") or item.get("adArchiveUrl") or "",
+            "url": item.get("url") or item.get("adArchiveUrl") or item.get("ad_snapshot_url") or "",
+            "apify_ad_id": str(item.get("adArchiveId") or item.get("ad_id") or item.get("id") or ""),
         }
 
     def _load_mock_ads(self) -> list[dict]:
@@ -107,7 +122,21 @@ class SuccessfulAdSearchAgent:
         except (TypeError, ValueError):
             return default
 
+    def _metric_value(self, value) -> float:
+        if isinstance(value, dict):
+            values = [self._safe_number(item) for item in value.values()]
+            return max(values) if values else 0
+        if isinstance(value, list):
+            values = [self._safe_number(item) for item in value]
+            return max(values) if values else 0
+        return self._safe_number(value)
+
     def _save_json(self, ads: list[dict]) -> None:
         self.output_file.parent.mkdir(parents=True, exist_ok=True)
         with self.output_file.open("w", encoding="utf-8") as file:
+            json.dump(ads, file, indent=2)
+
+    def _save_raw_json(self, ads: list[dict]) -> None:
+        self.raw_output_file.parent.mkdir(parents=True, exist_ok=True)
+        with self.raw_output_file.open("w", encoding="utf-8") as file:
             json.dump(ads, file, indent=2)

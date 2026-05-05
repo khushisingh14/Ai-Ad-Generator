@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from backend.agents import run_ad_agent_flow
+from backend.agents.apify_fetch import ApifyMetaAdsClient
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -36,6 +37,9 @@ if (FRONTEND_DIST / "assets").exists():
 class GenerateAdRequest(BaseModel):
     product_url: str = "https://crowdwisdomtrading.com"
     niche: str = "trading research and market signals"
+    days: int = 30
+    limit: int = 5
+    force_mock: bool = False
 
 
 @app.get("/")
@@ -53,9 +57,17 @@ def generate_ad(payload: GenerateAdRequest | None = None):
         PROJECT_DIR,
         product_url=request_data.product_url,
         niche=request_data.niche,
+        days=request_data.days,
+        limit=request_data.limit,
+        force_mock=request_data.force_mock,
     )
 
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/apify-status")
+def apify_status():
+    return ApifyMetaAdsClient().status()

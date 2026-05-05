@@ -7,5 +7,6 @@ uvicorn.*.log
 node_modules/
 frontend/dist/
 backend/data/working_ads.json
+backend/data/apify_raw_ads.json
 backend/data/generated_campaign.json
 backend/media/

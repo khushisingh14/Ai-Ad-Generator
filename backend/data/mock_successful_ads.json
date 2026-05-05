@@ -9,7 +9,8 @@
     "engagement": 9450,
     "impressions": 185000,
     "platform": "Meta Ads",
-    "url": "https://example.com/ad/market-signal-pro"
+    "url": "https://example.com/ad/market-signal-pro",
+    "apify_ad_id": "mock-001"
   },
   {
     "brand": "TradeClarity",
@@ -21,7 +22,8 @@
     "engagement": 8100,
     "impressions": 160000,
     "platform": "Meta Ads",
-    "url": "https://example.com/ad/tradeclarity"
+    "url": "https://example.com/ad/tradeclarity",
+    "apify_ad_id": "mock-002"
   },
   {
     "brand": "SignalRoom",
@@ -33,7 +35,8 @@
     "engagement": 6100,
     "impressions": 120000,
     "platform": "Meta Ads",
-    "url": "https://example.com/ad/signalroom"
+    "url": "https://example.com/ad/signalroom",
+    "apify_ad_id": "mock-003"
   },
   {
     "brand": "ChartMentor",
@@ -45,7 +48,8 @@
     "engagement": 4200,
     "impressions": 99000,
     "platform": "Meta Ads",
-    "url": "https://example.com/ad/chartmentor"
+    "url": "https://example.com/ad/chartmentor",
+    "apify_ad_id": "mock-004"
   },
   {
     "brand": "Old Bull Alerts",
@@ -57,6 +61,7 @@
     "engagement": 1000,
     "impressions": 88000,
     "platform": "Meta Ads",
-    "url": "https://example.com/ad/old-bull-alerts"
+    "url": "https://example.com/ad/old-bull-alerts",
+    "apify_ad_id": "mock-005"
   }
 ]
