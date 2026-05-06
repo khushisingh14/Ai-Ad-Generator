@@ -41,7 +41,8 @@ function App() {
       });
 
       if (!response.ok) {
-        throw new Error("The backend could not generate the ad flow.");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "The backend could not generate the ad flow.");
       }
 
       setResult(await response.json());
