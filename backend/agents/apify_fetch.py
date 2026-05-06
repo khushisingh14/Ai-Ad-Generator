@@ -134,23 +134,9 @@ class ApifyMetaAdsClient:
         return f"{self.base_url}/acts/{target_id}/run-sync-get-dataset-items?{params}"
 
     def _build_input(self, product_url: str, niche: str, days: int, limit: int) -> dict:
-        search_terms = [
-            product_url,
-            "crowdwisdomtrading.com",
-            niche,
-            f"{niche} trading ads",
-        ]
-
         return {
-            "query": product_url,
-            "queries": search_terms,
-            "searchTerms": search_terms,
-            "keywords": search_terms,
-            "niche": niche,
-            "platform": "facebook",
-            "activeWithinDays": days,
-            "maxItems": min(limit, self.settings.max_items),
-            "limit": min(limit, self.settings.max_items),
+            "queries": [niche],
+            "maxPagesPerQuery": 1,
         }
 
     def _masked_target_id(self) -> str:

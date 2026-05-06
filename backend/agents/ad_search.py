@@ -1,6 +1,7 @@
 import json
 from datetime import date, datetime, timedelta
 from pathlib import Path
+from urllib.parse import urlparse
 
 from .apify_fetch import ApifyMetaAdsClient
 
@@ -41,7 +42,20 @@ class SuccessfulAdSearchAgent:
         }
 
     def _normalize_ads(self, items: list[dict]) -> list[dict]:
-        return [self._normalize_apify_item(item) for item in items if isinstance(item, dict)]
+        normalized_ads = []
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            search_results = item.get("organicResults") or item.get("paidResults") or item.get("results")
+            if isinstance(search_results, list):
+                normalized_ads.extend(
+                    self._normalize_apify_item(result)
+                    for result in search_results
+                    if isinstance(result, dict)
+                )
+            else:
+                normalized_ads.append(self._normalize_apify_item(item))
+        return normalized_ads
 
     def _normalize_apify_item(self, item: dict) -> dict:
         snapshot = item.get("snapshot") or {}
@@ -56,6 +70,8 @@ class SuccessfulAdSearchAgent:
             or item.get("text")
             or item.get("body")
             or item.get("ad_creative_body")
+            or item.get("description")
+            or item.get("snippet")
             or snapshot_body_text
             or snapshot.get("caption")
             or ""
@@ -66,7 +82,7 @@ class SuccessfulAdSearchAgent:
             or item.get("createdAt")
             or item.get("ad_delivery_start_time")
             or item.get("start_date")
-            or ""
+            or date.today().isoformat()
         )
 
         return {
@@ -75,10 +91,11 @@ class SuccessfulAdSearchAgent:
                 or item.get("page_name")
                 or item.get("brand")
                 or page.get("name")
+                or self._domain_from_url(item.get("url"))
                 or "Unknown advertiser"
             ),
             "ad_text": text,
-            "hook": item.get("headline") or creative.get("title") or snapshot.get("title") or text[:90],
+            "hook": item.get("headline") or item.get("title") or creative.get("title") or snapshot.get("title") or text[:90],
             "cta": item.get("cta") or item.get("callToAction") or item.get("cta_text") or "Learn More",
             "started_at": started_at[:10],
             "spend": self._metric_value(metrics.get("spend") or item.get("spend")),
@@ -88,6 +105,11 @@ class SuccessfulAdSearchAgent:
             "url": item.get("url") or item.get("adArchiveUrl") or item.get("ad_snapshot_url") or "",
             "apify_ad_id": str(item.get("adArchiveId") or item.get("ad_id") or item.get("id") or ""),
         }
+
+    def _domain_from_url(self, url: str | None) -> str:
+        if not url:
+            return ""
+        return urlparse(url).netloc.removeprefix("www.")
 
     def _load_mock_ads(self) -> list[dict]:
         with self.mock_file.open("r", encoding="utf-8") as file:
