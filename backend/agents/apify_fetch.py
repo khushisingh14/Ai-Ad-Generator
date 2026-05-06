@@ -3,6 +3,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 from urllib import request
+from urllib.error import HTTPError, URLError
 
 
 def load_local_env() -> None:
@@ -50,6 +51,10 @@ class ApifySettings:
         return "apify~google-search-scraper" if self.token else ""
 
 
+class ApifyRequestError(Exception):
+    """Raised when the Apify actor call fails."""
+
+
 class ApifyMetaAdsClient:
     """Runs an Apify Actor or Task and returns dataset items.
 
@@ -66,20 +71,31 @@ class ApifyMetaAdsClient:
     def search_ads(self, product_url: str, niche: str, days: int, limit: int) -> list[dict]:
         if not self.settings.is_configured:
             self.last_error = "APIFY_TOKEN is not set."
-            return []
+            raise ApifyRequestError(self.last_error)
 
         return self._load_from_apify(niche)
 
     def _load_from_apify(self, niche: str) -> list[dict]:
+        if not niche or not niche.strip():
+            self.last_error = "niche is required before calling Apify."
+            raise ApifyRequestError(self.last_error)
+
+        token = self.settings.token.strip()
+        if not token:
+            self.last_error = "APIFY_TOKEN is empty."
+            raise ApifyRequestError(self.last_error)
+
         url = (
             "https://api.apify.com/v2/acts/"
-            f"apify~google-search-scraper/run-sync-get-dataset-items?token={self.settings.token}"
+            f"apify~google-search-scraper/run-sync-get-dataset-items?token={token}"
         )
         payload = {
-            "queries": [niche],
+            "queries": niche.strip(),
             "maxPagesPerQuery": 1,
             "resultsPerPage": 5,
         }
+        print("APIFY ACTOR INPUT:", payload)
+
         req = request.Request(
             url,
             data=json.dumps(payload).encode("utf-8"),
@@ -89,11 +105,19 @@ class ApifyMetaAdsClient:
 
         try:
             with request.urlopen(req, timeout=120) as response:
-                return json.loads(response.read().decode("utf-8"))
-        except Exception as e:
+                data = json.loads(response.read().decode("utf-8"))
+                print("APIFY RESPONSE ITEMS:", len(data) if isinstance(data, list) else type(data).__name__)
+                return data
+        except HTTPError as e:
+            print("APIFY ERROR:", e)
+            error_body = e.read().decode("utf-8", errors="replace")
+            print("APIFY ERROR RESPONSE:", error_body)
+            self.last_error = f"{e}: {error_body}"
+            raise ApifyRequestError(self.last_error) from e
+        except (URLError, OSError, json.JSONDecodeError) as e:
             print("APIFY ERROR:", e)
             self.last_error = str(e)
-        return []
+            raise ApifyRequestError(self.last_error) from e
 
     def status(self) -> dict:
         return {
