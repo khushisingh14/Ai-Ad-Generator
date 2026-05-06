@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.DS_Store
+uvicorn.*.log
+node_modules/
+frontend/node_modules/
+backend/data/working_ads.json
+backend/data/apify_raw_ads.json
+backend/data/generated_campaign.json
+backend/media/
